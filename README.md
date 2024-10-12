@@ -111,5 +111,45 @@ Let us illustate this - let's say we want to write "JBO" to the `buf[1]`, `buf[2
 
 Using that strategy, we could write an arbitrary buffer to an arbitrary offset in `buf` (excluding `buf[0]`, but who cares).
 
+### Execution strategy
+Now we can read and write arbitrary values after `buf` - we could do the following:
+1. Use the reading strategy to leak the stack canary, old RBP and the return address - reading `8*3 = 24` bytes, one byte one, and destroying those values.
+2. Since we now have the canary value - restoring it before returning from the `prng` function allows us to bypass the stack canary.
+3. Since we read the return address we now defeat ASLR for the main module.
+4. We use the writing strategy to write inr reverse - the new return address, the old RBP value and the old stack cookie.
+5. We return to trigger the exploit and essentially jump to the new return address.
 
+The only question that remains is - what to write in the return address? We defeat ASLR so we can jump anywhere within the main module, but there is no "you_win" function or "give_shell" function.  
+Well, the solution is to live-off-the-land, using `ROP`.
 
+### ROP
+ROP (Return-Oriented-Programming) is the idea to override the return address with addresses that do simple things and end up with a `ret` instruction. For example:
+
+```assembly
+mov rax, 1337
+inc rbx
+ret
+```
+
+Each of those pieces is known as a `ROP gadget`. Since `ret` will basically `pop` the next value to `RIP`, we can "concatenate" those pieces.  
+On Intel architecture it's easier to find `ROP gadgets` since the instruction set is very dense, and you can jump to middle of instructions, hence making the CPU interpret them as new instructions. Note not all architectures are like that - for instance, in `ARM64` you can only jump to addresses divisible by 4.  
+Luckily, there are great automated utilities to find ROP gadgets for us - I personally like [ROPgadget](https://github.com/JonathanSalwan/ROPgadget). Here's a typical output:
+
+```
+ROPgadget --binary ./prng --ropchain
+...
+p += pack('<Q', 0x0000000000017ac2) # pop rsi ; ret
+p += pack('<Q', 0x00000000000ce000) # @ .data
+p += pack('<Q', 0x0000000000049bb7) # pop rax ; ret
+p += b'/bin//sh'
+p += pack('<Q', 0x000000000004c501) # mov qword ptr [rsi], rax ; ret
+p += pack('<Q', 0x0000000000017ac2) # pop rsi
+...
+```
+
+Note this essentially helps you "program" with ROP and even outputs Python code for you. However, this needs some "massaging" due to 2 reasons:
+1. We need to handle the difference between the return address and the module base (which is constant).
+2. We cannot call `execve` on `/bin/sh` since `/bin/sh` drops privileges by default. We can either use the `-p` argument or call `setuid(0)` (which is what I ended up doing).
+
+### Putting it all together
+```
