@@ -7,5 +7,5 @@ gcc -fPIE -static-pie -Wall -Wl,-z,relro,-z,now -oprng ./prng.c -fstack-protecto
 checksec ./prng
 chown root:root ./prng
 chmod 4755 ./prng
-echo this_is_out_flag > ./flag.txt
+echo this_is_our_flag > ./flag.txt
 chmod 600 ./flag.txt
