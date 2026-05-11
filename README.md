@@ -19,7 +19,7 @@ First, it's important to run `checksec`:
     PIE:      PIE enabled
 ```
 As you can see, all protections are enabled! Woah! Let's continue with static code analysis then.  
-The challenge provides us with a "PRNG" ((Pseudo-Random-Number-Generator)[https://en.wikipedia.org/wiki/Pseudorandom_number_generator]) utility.  
+The challenge provides us with a "PRNG" ([Pseudo-Random-Number-Generator](https://en.wikipedia.org/wiki/Pseudorandom_number_generator)) utility.  
 Here is the code:
 
 ```c
