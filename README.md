@@ -289,7 +289,7 @@ The entire solution lives under [solve.py] in this repository.
 ## Summary
 We managed to exploit an x64 binary with all "traditional" protections: `ASLR`, `NX` and `stack cookies`.  
 We used `ROP` to live-off-the-land after bypassing ASLR, and showed that a brute-force approach can be taken prior to triggering any vulnerabilities, which is an approach one can take in many real-world scenarios.  
-I intend continuing this series with heap exploitation, please stay tuned!  
-Jonathan Bar Or
+I intend continuing this series with heap exploitation, please stay tuned!
 
+Jonathan Bar Or (https://jonathanbaror.com)
 
